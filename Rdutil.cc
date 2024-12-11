@@ -219,7 +219,7 @@ Rdutil::makeclones(bool dryrun) const {
         std::cout << "Skipped " << already_cloned << " files that were already clones." << std::endl;
     }
 
-    return cloned;
+    return cloned - already_cloned;
 }
   #endif
 
