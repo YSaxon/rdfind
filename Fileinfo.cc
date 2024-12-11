@@ -331,6 +331,7 @@ Fileinfo::static_makehardlink(Fileinfo& A, const Fileinfo& B)
 #if defined(HAVE_APFS_CLONING)
 #include <sys/clonefile.h>
 #include <sys/mount.h>
+#include <copyfile.h>
 
 bool Fileinfo::is_on_apfs() const {
     struct statfs fs;
@@ -370,15 +371,92 @@ bool Fileinfo::is_clone_of(const Fileinfo& other) const {
     return are_clones;
 }
 
-int Fileinfo::makeclone(const Fileinfo& other) {
-    return transactional_operation(name(), [&](const std::string& filename) {
-        const int retval = clonefile(other.name().c_str(), filename.c_str(), 0);
-        if (retval) {
-            std::cerr << "Failed to make clone " << filename << " of " << other.name()
-                     << ": " << std::strerror(errno) << '\n';
+static std::string make_temp_file_nearby(const std::string &basePath) {
+    // Extract directory from basePath
+    std::string dir = basePath;
+    size_t pos = dir.rfind('/');
+    if (pos != std::string::npos) {
+        dir.erase(pos);
+    } else {
+        // No slash found, use current directory
+        dir = ".";
+    }
+
+    // Create a template for mkstemp
+    std::string tmpl = dir + "/.clonebackup.XXXXXX";
+    std::vector<char> buf(tmpl.begin(), tmpl.end());
+    buf.push_back('\0');
+
+    int fd = mkstemp(&buf[0]);
+    if (fd == -1) {
+        std::cerr << "Failed to create temporary file near " << basePath
+                  << ": " << std::strerror(errno) << "\n";
+        return std::string(); // Return empty on failure
+    }
+    close(fd); // We only need the name, not the open file descriptor
+    return std::string(&buf[0]);
+}
+
+int Fileinfo::makeclone(const Fileinfo &other) {
+    std::string target = name();
+    std::string backup = make_temp_file_nearby(target);
+
+    if (backup.empty()) {
+        // Couldn't create a backup template file
+        return -1;
+    }
+
+    // Step 1: Rename target to backup to preserve original file for rollback
+    if (rename(target.c_str(), backup.c_str()) != 0) {
+        std::cerr << "Failed to rename " << target << " to " << backup
+                  << ": " << std::strerror(errno) << "\n";
+        // Cleanup the unused backup file
+        unlink(backup.c_str());
+        return -1;
+    }
+
+    // Step 2: Perform the clone
+    // Adjust flags if you want ACL copying by clonefile or no-owner-copy logic
+    uint32_t clone_flags = 0;
+    if (clonefile(other.name().c_str(), target.c_str(), clone_flags) != 0) {
+        std::cerr << "Failed to clone " << other.name() << " into " << target
+                  << ": " << std::strerror(errno) << "\n";
+
+        // Rollback: restore the original target file
+        if (rename(backup.c_str(), target.c_str()) != 0) {
+            std::cerr << "Rollback error: failed to restore original file "
+                      << target << " from " << backup << ": " << std::strerror(errno) << "\n";
         }
-        return retval;
-    });
+        return -1;
+    }
+
+    // Step 3: Use copyfile() to restore original metadata (ownership, perms, ACLs, xattrs)
+    // COPYFILE_METADATA copies all non-data metadata
+    if (copyfile(backup.c_str(), target.c_str(), NULL, COPYFILE_METADATA) != 0) {
+        std::cerr << "Warning: Failed to restore metadata from " << backup
+                  << " to " << target << ": " << std::strerror(errno) << "\n";
+
+        // Rollback: remove cloned file and restore backup
+        if (unlink(target.c_str()) != 0) {
+            std::cerr << "Rollback error: failed to remove cloned file " << target
+                      << ": " << std::strerror(errno) << "\n";
+        }
+        if (rename(backup.c_str(), target.c_str()) != 0) {
+            std::cerr << "Rollback error: failed to restore original file " << target
+                      << " from " << backup << ": " << std::strerror(errno) << "\n";
+        }
+        return -1;
+    }
+
+    // Step 4: Cleanup the backup
+    if (unlink(backup.c_str()) != 0) {
+        std::cerr << "Warning: Failed to remove backup file " << backup
+                  << ": " << std::strerror(errno) << "\n";
+        // Not a critical failure, we have a successfully cloned and restored file
+    }
+
+    // Success
+    return 0;
 }
 
 int Fileinfo::static_makeclone(Fileinfo& A, const Fileinfo& B) {
