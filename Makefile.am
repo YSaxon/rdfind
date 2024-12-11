@@ -18,7 +18,9 @@ TESTS=testcases/largefilesupport.sh \
       testcases/verify_deterministic_operation.sh \
       testcases/checksum_options.sh \
       testcases/md5collisions.sh \
-      testcases/sha1collisions.sh
+      testcases/sha1collisions.sh \
+      testcases/verify_cloning.sh \
+      testcases/verify_clone_deterministic.sh
 
 AUXFILES=testcases/common_funcs.sh \
          testcases/md5collisions/letter_of_rec.ps \
