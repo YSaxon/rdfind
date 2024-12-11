@@ -144,7 +144,7 @@ parseOptions(Parser& parser)
       o.makehardlinks = parser.get_parsed_bool();
     }
       else if (parser.try_parse_bool("-makeclones")) {
-      #if !defined(HAVE_CLONEFILE) || !defined(HAVE_SYS_CLONEFILE_H)
+      #if !defined(HAVE_APFS_CLONING)
           std::cerr << "APFS cloning support is not available in this build.\n";
           std::exit(EXIT_FAILURE);
       #else
