@@ -184,7 +184,7 @@ Rdutil::makeclones(bool dryrun) const {
 
     if (dryrun) {
         const bool outputBname = true;
-        dryrun_helper<outputBname> obj("clone ", " from ");
+        dryrun_helper<outputBname> obj("clone ", " to ");
         auto ret = applyactiononfile(m_list, obj);
         std::cout.flush();
         return ret;
