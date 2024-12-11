@@ -319,3 +319,61 @@ Fileinfo::static_makehardlink(Fileinfo& A, const Fileinfo& B)
 {
   return A.makehardlink(B);
 }
+
+#if defined(HAVE_APFS_CLONING)
+#include <sys/clonefile.h>
+#include <sys/mount.h>
+
+bool Fileinfo::is_on_apfs() const {
+    struct statfs fs;
+    if (statfs(m_filename.c_str(), &fs) != 0) {
+        return false;
+    }
+    return strcmp(fs.f_fstypename, "apfs") == 0;
+}
+
+bool Fileinfo::is_clone_of(const Fileinfo& other) const {
+    struct log2phys physA, physB;
+
+    int fdA = open(m_filename.c_str(), O_RDONLY);
+    if (fdA < 0) {
+        return false;
+    }
+
+    int fdB = open(other.m_filename.c_str(), O_RDONLY);
+    if (fdB < 0) {
+        close(fdA);
+        return false;
+    }
+
+    bool are_clones = false;
+    if (fcntl(fdA, F_LOG2PHYS, &physA) >= 0 && fcntl(fdB, F_LOG2PHYS, &physB) >= 0) {
+        if (physA.l2p_devoffset == physB.l2p_devoffset) {
+            if (lseek(fdA, -1, SEEK_END) >= 0 && lseek(fdB, -1, SEEK_END) >= 0) {
+                if (fcntl(fdA, F_LOG2PHYS, &physA) >= 0 && fcntl(fdB, F_LOG2PHYS, &physB) >= 0) {
+                    are_clones = (physA.l2p_devoffset == physB.l2p_devoffset);
+                }
+            }
+        }
+    }
+
+    close(fdA);
+    close(fdB);
+    return are_clones;
+}
+
+int Fileinfo::makeclone(const Fileinfo& other) {
+    return transactional_operation(name(), [&](const std::string& filename) {
+        const int retval = clonefile(other.name().c_str(), filename.c_str(), 0);
+        if (retval) {
+            std::cerr << "Failed to make clone " << filename << " of " << other.name()
+                     << ": " << std::strerror(errno) << '\n';
+        }
+        return retval;
+    });
+}
+
+int Fileinfo::static_makeclone(Fileinfo& A, const Fileinfo& B) {
+    return A.makeclone(B);
+}
+#endif

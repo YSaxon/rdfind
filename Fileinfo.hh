@@ -155,6 +155,22 @@ public:
   // returns true if file is a directory . call readfileinfo first!
   bool isDirectory() const { return m_info.is_directory; }
 
+#if defined(HAVE_APFS_CLONING)
+  /// checks if file is on an APFS filesystem
+  bool is_on_apfs() const;
+
+  /// checks if this file is a clone of another file
+  bool is_clone_of(const Fileinfo& other) const;
+
+  /// makes a clone of this file that points to other
+  int makeclone(const Fileinfo& other);
+
+  /// static helper to make a clone of A that points to B
+  static int static_makeclone(Fileinfo& A, const Fileinfo& B);
+
+#endif
+
+
 private:
   // to store info about the file
   struct Fileinfostat

@@ -177,6 +177,52 @@ Rdutil::makehardlinks(bool dryrun) const
   }
 }
 
+#if defined(HAVE_APFS_CLONING)
+std::size_t
+// Rdutil::makeclones(bool dryrun, bool skip_existing_clones) const {
+Rdutil::makeclones(bool dryrun) const {
+
+    if (dryrun) {
+        const bool outputBname = true;
+        dryrun_helper<outputBname> obj("clone ", " from ");
+        auto ret = applyactiononfile(m_list, obj);
+        std::cout.flush();
+        return ret;
+    }
+
+    bool warned_about_non_apfs = false;
+    std::size_t already_cloned = 0;
+
+    // Wrap file operation in lambda to handle APFS checks and existing clones
+    auto clone_op = [&](Fileinfo& A, const Fileinfo& B) -> int {
+        if (!A.is_on_apfs() || !B.is_on_apfs()) {
+            if (!warned_about_non_apfs) {
+                std::cerr << "Warning: some files are not on APFS filesystems. These will be skipped.\n";
+                warned_about_non_apfs = true;
+            }
+            return 0; // Skip but don't count as error
+        }
+
+        // if (skip_existing_clones && A.is_clone_of(B)) {
+        if (A.is_clone_of(B)) {
+
+            ++already_cloned;
+            return 0; // Skip but don't count as error
+        }
+
+        return Fileinfo::static_makeclone(A, B);
+    };
+
+    auto cloned = applyactiononfile(m_list, clone_op);
+
+    if (already_cloned > 0) {
+        std::cout << "Skipped " << already_cloned << " files that were already clones." << std::endl;
+    }
+
+    return cloned;
+}
+  #endif
+
 // mark files with a unique number
 void
 Rdutil::markitems()

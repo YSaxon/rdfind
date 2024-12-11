@@ -69,6 +69,11 @@ usage()
        "symbolic links\n"
     << " -makehardlinks     true |(false) replace duplicate files with "
        "hard links\n"
+#if defined(HAVE_APFS_CLONING)
+    << " -makeclones       true |(false) replace duplicate files with "
+       "APFS clones\n"
+       "                                  (macOS/APFS only)\n"
+#endif
     << " -makeresultsfile  (true)| false  makes a results file\n"
     << " -outputname  name  sets the results file name to \"name\" "
        "(default results.txt)\n"
@@ -110,6 +115,9 @@ struct Options
   bool deterministic = true; // be independent of filesystem order
   long nsecsleep = 0; // number of nanoseconds to sleep between each file read.
   std::string resultsfile = "results.txt"; // results file name.
+  #if defined(HAVE_APFS_CLONING)
+  bool makeclones = false;
+  #endif
 };
 
 Options
@@ -134,6 +142,14 @@ parseOptions(Parser& parser)
       o.makesymlinks = parser.get_parsed_bool();
     } else if (parser.try_parse_bool("-makehardlinks")) {
       o.makehardlinks = parser.get_parsed_bool();
+    }
+      else if (parser.try_parse_bool("-makeclones")) {
+      #if !defined(HAVE_CLONEFILE) || !defined(HAVE_SYS_CLONEFILE_H)
+          std::cerr << "APFS cloning support is not available in this build.\n";
+          std::exit(EXIT_FAILURE);
+      #else
+          o.makeclones = parser.get_parsed_bool();
+      #endif
     } else if (parser.try_parse_bool("-makeresultsfile")) {
       o.makeresultsfile = parser.get_parsed_bool();
     } else if (parser.try_parse_string("-outputname")) {
@@ -424,6 +440,16 @@ main(int narg, const char* argv[])
     std::cout << dryruntext << "Making " << tmp << " links." << std::endl;
     return 0;
   }
+
+  #if defined(HAVE_APFS_CLONING)
+  if (o.makeclones) {
+    std::cout << dryruntext << "Now making APFS clones." << std::endl;
+    // const auto tmp = gswd.makeclones(o.dryrun, o.skipexistingclones);
+    const auto tmp = gswd.makeclones(o.dryrun);
+    std::cout << dryruntext << "Made " << tmp << " clones." << std::endl;
+    return 0;
+  }
+  #endif
 
   // traverse the list and delete files
   if (o.deleteduplicates) {

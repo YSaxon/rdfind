@@ -100,6 +100,12 @@ public:
   /// delete duplicates from file system.
   std::size_t deleteduplicates(bool dryrun) const;
 
+  #if defined(HAVE_APFS_CLONING)
+  /// make APFS clones of duplicates
+  // std::size_t makeclones(bool dryrun, bool skip_existing_clones) const;
+  std::size_t makeclones(bool dryrun) const;
+  #endif
+
   /**
    * gets the total size, in bytes.
    * @param opmode 0 just add everything, 1 only elements with

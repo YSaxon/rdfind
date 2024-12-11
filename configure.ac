@@ -6,7 +6,7 @@ dnl See LICENSE for further details.
 VERSION="1.6.next"
 AC_INIT([rdfind],[1.6.next])
 AC_CONFIG_SRCDIR([rdfind.cc])
-AC_CONFIG_HEADERS([config.h])       
+AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE
 
@@ -37,25 +37,36 @@ AC_HEADER_ASSERT
 dnl test for nettle
 AC_CHECK_HEADER(nettle/sha.h,,[AC_MSG_ERROR([
  nettle header files missing. Please install nettle
- first. If you have already done so and get this error message 
- anyway, it may be installed somewhere else, maybe because you 
+ first. If you have already done so and get this error message
+ anyway, it may be installed somewhere else, maybe because you
  don't have root access. Pass CPPFLAGS=-I/your/path/to/nettle to configure
  and try again. The path should be so that \#include "nettle/sha.h" works.
  On Debian-ish systems, use "apt-get install nettle-dev" to get a system
  wide nettle install.
-])]) 
+])])
 AC_CHECK_LIB(nettle,nettle_pbkdf2_hmac_sha256,,[AC_MSG_ERROR([
  Could not link to libnettle. Please install nettle
  first. If you have already done so; please run ldconfig
  as root or check whether the path libnettle was installed
- to is in your LD_LIBRARY_PATH. If you have nettle 
- somewhere else, maybe because you don't have root 
+ to is in your LD_LIBRARY_PATH. If you have nettle
+ somewhere else, maybe because you don't have root
  access, pass LDFLAGS=-L/your/path/to/nettle to configure
  and try again.
 ])])
 
 dnl test for some specific functions
 AC_CHECK_FUNC(stat,,AC_MSG_ERROR(oops! no stat ?!?))
+
+dnl test for APFS cloning support
+AC_CHECK_HEADERS([sys/clonefile.h], [have_clonefile_h=yes], [have_clonefile_h=no])
+AC_CHECK_FUNC([clonefile], [have_clonefile=yes], [have_clonefile=no])
+AC_CHECK_DECLS([F_LOG2PHYS], [have_log2phys=yes], [have_log2phys=no], [[#include <fcntl.h>]])
+
+if test "x$have_clonefile_h" = "xyes" && test "x$have_clonefile" = "xyes" && test "x$have_log2phys" = "xyes"; then
+    AC_DEFINE([HAVE_APFS_CLONING], [1], [Define if APFS cloning support is available])
+else
+    AC_MSG_NOTICE([APFS cloning support will be disabled (missing required features)])
+fi
 
 dnl check for 64 bit support
 AC_SYS_LARGEFILE
@@ -125,8 +136,8 @@ if test "x$set_more_warnings" != xno; then
                          -Wzero-as-null-pointer-constant \
                          -Wparentheses \
                          -Wdate-time \
-                         -Wextra-semi \ 
-                         -Wbiznafronck" 
+                         -Wextra-semi \
+                         -Wbiznafronck"
 
         #these warnings were tried but deemed unuseful for this project:
         #                -Wunsafe-loop-optimizations \
@@ -170,7 +181,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
             [has_fallthrough=yes],
             [has_fallthrough=no])
 AC_MSG_RESULT($has_fallthrough)
-if test $has_fallthrough = yes; then            
+if test $has_fallthrough = yes; then
 AC_DEFINE(FALLTHROUGH, [str], "support for c++17 fallthrough")
 else
 AC_DEFINE(FALLTHROUGH, [], "support for c++17 fallthrough")
@@ -179,7 +190,7 @@ fi
 dnl valgrind support
 dnl unfortunately it makes checking much slower
 dnl even if valgrind is not used, so leave it inactive.
-dnl AX_VALGRIND_CHECK 
+dnl AX_VALGRIND_CHECK
 dnl
 dnl instead, just use "VALGRIND=valgrind make check" to test with valgrind
 dnl read Makefile.in and write Makefile
