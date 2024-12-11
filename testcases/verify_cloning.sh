@@ -78,7 +78,7 @@ fi
 dbgecho "Starting dryrun test"
 local_reset
 $rdfind -dryrun true -makeclones true a b >rdfind.out
-grep -q "(DRYRUN MODE) clone .* to" rdfind.out || {
+grep -q "(DRYRUN MODE) clone .* from" rdfind.out || {
     dbgecho "Dryrun message not found in output:"
     cat rdfind.out
     exit 1
