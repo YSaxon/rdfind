@@ -22,6 +22,14 @@
 #include "Fileinfo.hh"
 #include "UndoableUnlink.hh"
 
+#if defined(HAVE_APFS_CLONING)
+#include <sys/clonefile.h>
+#include <sys/mount.h>
+#include <fcntl.h>        // for fcntl, F_LOG2PHYS, O_RDONLY
+#include <sys/fcntl.h>    // for struct log2phys
+#include <unistd.h>       // for lseek, SEEK_END
+#endif
+
 int
 Fileinfo::fillwithbytes(enum readtobuffermode filltype,
                         enum readtobuffermode lasttype)
