@@ -25,7 +25,7 @@
 // class declaration
 #include "Rdutil.hh"
 
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
 #include <set>       // for std::set
 #include <sys/types.h> // for off_t
 #endif
@@ -182,7 +182,7 @@ Rdutil::makehardlinks(bool dryrun) const
   }
 }
 
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
 std::size_t
 Rdutil::makeclones(bool dryrun) const
 {
@@ -208,7 +208,7 @@ Rdutil::makeclones(bool dryrun) const
         }
 
         if (A.is_clone_of(B)) {
-          
+
             ++already_cloned;
             return 0; // Skip but don't count as error
         }
@@ -506,7 +506,7 @@ Fileinfo::filesizetype
 Rdutil::totalsizeinbytes(int opmode) const
 {
   assert(opmode == 0 || opmode == 1
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
          || opmode == 2
   #endif
   );
@@ -523,7 +523,7 @@ Rdutil::totalsizeinbytes(int opmode) const
       }
     }
   }
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   else if (opmode == 2) //total size on disk taking existing cow copies into account
   {
     std::set<off_t> unique_blocks;

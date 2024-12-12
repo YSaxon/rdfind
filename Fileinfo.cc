@@ -22,7 +22,7 @@
 #include "Fileinfo.hh"
 #include "UndoableUnlink.hh"
 
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
 #include <sys/clonefile.h>
 #include <sys/mount.h>
 #include <fcntl.h>        // for fcntl, F_LOG2PHYS, O_RDONLY
@@ -328,7 +328,7 @@ Fileinfo::static_makehardlink(Fileinfo& A, const Fileinfo& B)
   return A.makehardlink(B);
 }
 
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
 #include <sys/clonefile.h>
 #include <sys/mount.h>
 #include <copyfile.h>

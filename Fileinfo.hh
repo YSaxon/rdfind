@@ -155,7 +155,7 @@ public:
   // returns true if file is a directory . call readfileinfo first!
   bool isDirectory() const { return m_info.is_directory; }
 
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
   /// checks if file is on an APFS filesystem
   bool is_on_apfs() const;
 

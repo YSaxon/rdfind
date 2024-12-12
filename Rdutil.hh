@@ -100,7 +100,7 @@ public:
   /// delete duplicates from file system.
   std::size_t deleteduplicates(bool dryrun) const;
 
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   /// make APFS clones of duplicates
   std::size_t makeclones(bool dryrun) const;
   #endif
@@ -125,7 +125,7 @@ public:
   /// outputs the saveable amount of space
   std::ostream& saveablespace(std::ostream& out) const;
 
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   std::ostream& cloneaware_saveablespace(std::ostream& out) const;
   #endif
 

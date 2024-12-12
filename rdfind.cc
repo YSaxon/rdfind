@@ -69,7 +69,7 @@ usage()
        "symbolic links\n"
     << " -makehardlinks     true |(false) replace duplicate files with "
        "hard links\n"
-#if defined(HAVE_APFS_CLONING)
+#ifdef HAVE_APFS_CLONING
     << " -makeclones       true |(false) replace duplicate files with "
        "APFS clones\n"
        "                                  (macOS/APFS only)\n"
@@ -115,7 +115,7 @@ struct Options
   bool deterministic = true; // be independent of filesystem order
   long nsecsleep = 0; // number of nanoseconds to sleep between each file read.
   std::string resultsfile = "results.txt"; // results file name.
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   bool makeclones = false;
   #endif
 };
@@ -419,7 +419,7 @@ main(int narg, const char* argv[])
   std::cout << dryruntext << "Totally, ";
   gswd.saveablespace(std::cout) << " can be reduced." << std::endl;
 
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   std::cout << dryruntext << "After considering existing clones, ";
   gswd.cloneaware_saveablespace(std::cout) << " can be reduced." << std::endl;
   #endif
@@ -448,7 +448,7 @@ main(int narg, const char* argv[])
     return 0;
   }
 
-  #if defined(HAVE_APFS_CLONING)
+  #ifdef HAVE_APFS_CLONING
   if (o.makeclones) {
     std::cout << dryruntext << "Now making APFS clones." << std::endl;
     // const auto tmp = gswd.makeclones(o.dryrun, o.skipexistingclones);
