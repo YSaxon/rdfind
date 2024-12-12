@@ -102,7 +102,6 @@ public:
 
   #if defined(HAVE_APFS_CLONING)
   /// make APFS clones of duplicates
-  // std::size_t makeclones(bool dryrun, bool skip_existing_clones) const;
   std::size_t makeclones(bool dryrun) const;
   #endif
 

@@ -179,9 +179,8 @@ Rdutil::makehardlinks(bool dryrun) const
 
 #if defined(HAVE_APFS_CLONING)
 std::size_t
-// Rdutil::makeclones(bool dryrun, bool skip_existing_clones) const {
-Rdutil::makeclones(bool dryrun) const {
-
+Rdutil::makeclones(bool dryrun) const
+{
     if (dryrun) {
         const bool outputBname = true;
         dryrun_helper<outputBname> obj("clone ", " from ");
@@ -203,9 +202,8 @@ Rdutil::makeclones(bool dryrun) const {
             return 0; // Skip but don't count as error
         }
 
-        // if (skip_existing_clones && A.is_clone_of(B)) {
         if (A.is_clone_of(B)) {
-
+          
             ++already_cloned;
             return 0; // Skip but don't count as error
         }
