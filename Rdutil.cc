@@ -25,6 +25,11 @@
 // class declaration
 #include "Rdutil.hh"
 
+#if defined(HAVE_APFS_CLONING)
+#include <set>       // for std::set
+#include <sys/types.h> // for off_t
+#endif
+
 int
 Rdutil::printtofile(const std::string& filename) const
 {
@@ -500,7 +505,11 @@ Rdutil::remove_small_files(Fileinfo::filesizetype minsize)
 Fileinfo::filesizetype
 Rdutil::totalsizeinbytes(int opmode) const
 {
-  assert(opmode == 0 || opmode == 1);
+  assert(opmode == 0 || opmode == 1
+  #if defined(HAVE_APFS_CLONING)
+         || opmode == 2
+  #endif
+  );
 
   Fileinfo::filesizetype totalsize = 0;
   if (opmode == 0) {
@@ -514,6 +523,18 @@ Rdutil::totalsizeinbytes(int opmode) const
       }
     }
   }
+  #if defined(HAVE_APFS_CLONING)
+  else if (opmode == 2) //total size on disk taking existing cow copies into account
+  {
+    std::set<off_t> unique_blocks;
+    for (const auto& elem : m_list) {
+        off_t cow_id = elem.get_cow_id();
+        if (cow_id == -1 || unique_blocks.insert(cow_id).second) {
+            totalsize += elem.size();
+        }
+    }
+  }
+  #endif
 
   return totalsize;
 }
@@ -577,6 +598,15 @@ std::ostream&
 Rdutil::saveablespace(std::ostream& out) const
 {
   auto size = totalsizeinbytes(0) - totalsizeinbytes(1);
+  int range = littlehelper::calcrange(size);
+  out << size << " " << littlehelper::byteprefix(range);
+  return out;
+}
+
+std::ostream&
+Rdutil::cloneaware_saveablespace(std::ostream& out) const
+{
+  auto size = totalsizeinbytes(2) - totalsizeinbytes(1);
   int range = littlehelper::calcrange(size);
   out << size << " " << littlehelper::byteprefix(range);
   return out;

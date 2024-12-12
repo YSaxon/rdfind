@@ -125,6 +125,10 @@ public:
   /// outputs the saveable amount of space
   std::ostream& saveablespace(std::ostream& out) const;
 
+  #if defined(HAVE_APFS_CLONING)
+  std::ostream& cloneaware_saveablespace(std::ostream& out) const;
+  #endif
+
 private:
   std::vector<Fileinfo>& m_list;
 };

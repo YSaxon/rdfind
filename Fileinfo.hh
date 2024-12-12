@@ -168,6 +168,10 @@ public:
   /// static helper to make a clone of A that points to B
   static int static_makeclone(Fileinfo& A, const Fileinfo& B);
 
+  // get shared id for APFS clones (akin to an inode)
+  off_t get_cow_id() const;
+
+
 #endif
 
 

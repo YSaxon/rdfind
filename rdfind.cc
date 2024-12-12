@@ -414,8 +414,15 @@ main(int narg, const char* argv[])
   std::cout << dryruntext << "It seems like you have " << filelist.size()
             << " files that are not unique\n";
 
+
+
   std::cout << dryruntext << "Totally, ";
   gswd.saveablespace(std::cout) << " can be reduced." << std::endl;
+
+  #if defined(HAVE_APFS_CLONING)
+  std::cout << dryruntext << "After considering existing clones, ";
+  gswd.cloneaware_saveablespace(std::cout) << " can be reduced." << std::endl;
+  #endif
 
   // traverse the list and make a nice file with the results
   if (o.makeresultsfile) {

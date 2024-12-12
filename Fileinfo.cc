@@ -342,33 +342,30 @@ bool Fileinfo::is_on_apfs() const {
 }
 
 bool Fileinfo::is_clone_of(const Fileinfo& other) const {
-    struct log2phys physA, physB;
+  // Note that this function is only valid when files have already been shown to be identical, since all we are doing is comparing the very first blocks.
+    return get_cow_id() == other.get_cow_id();
+}
 
-    int fdA = open(m_filename.c_str(), O_RDONLY);
-    if (fdA < 0) {
-        return false;
+off_t Fileinfo::get_cow_id() const {
+  // we can just look at the first block of the file
+    if (!is_on_apfs()) {
+        return -1;
     }
 
-    int fdB = open(other.m_filename.c_str(), O_RDONLY);
-    if (fdB < 0) {
-        close(fdA);
-        return false;
+    int fd = open(m_filename.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return -1;
     }
 
-    bool are_clones = false;
-    if (fcntl(fdA, F_LOG2PHYS, &physA) >= 0 && fcntl(fdB, F_LOG2PHYS, &physB) >= 0) {
-        if (physA.l2p_devoffset == physB.l2p_devoffset) {
-            if (lseek(fdA, -1, SEEK_END) >= 0 && lseek(fdB, -1, SEEK_END) >= 0) {
-                if (fcntl(fdA, F_LOG2PHYS, &physA) >= 0 && fcntl(fdB, F_LOG2PHYS, &physB) >= 0) {
-                    are_clones = (physA.l2p_devoffset == physB.l2p_devoffset);
-                }
-            }
-        }
+    struct log2phys phys;
+    off_t block_id = -1;
+
+    if (fcntl(fd, F_LOG2PHYS, &phys) >= 0) {
+        block_id = phys.l2p_devoffset;
     }
 
-    close(fdA);
-    close(fdB);
-    return are_clones;
+    close(fd);
+    return block_id;
 }
 
 static std::string make_temp_file_nearby(const std::string &basePath) {
